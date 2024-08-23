@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Http\Requests\UserRequest;
 use Illuminate\Support\Facades\Hash;
 use PDF;
+use App\Exports\UsersExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -24,19 +26,20 @@ class UserController extends Controller
          $this->middleware('permission:crear-usuario', ['only' => ['create','store']]);
          $this->middleware('permission:editar-usuario', ['only' => ['edit','update']]);
          $this->middleware('permission:borrar-usuario', ['only' => ['destroy']]);
-         $this->middleware('permission:generar-pdf-lista-usuarios', ['only' => ['pdf']]);
+         $this->middleware('permission:generar-listados-usuarios', ['only' => ['pdf','downloadPdf','export']]);
     }
 
     public function index(Request $request)
     {
         $busqueda = $request->busqueda;
-        $users = User::where('name','LIKE','%'.$busqueda.'%')
-                          ->orWhere('email','LIKE','%'.$busqueda.'%')
-                          ->latest('id')
-                          ->paginate(15);
+        $users = User::where('name', 'LIKE', '%' . $busqueda . '%')
+                    ->orWhere('email', 'LIKE', '%' . $busqueda . '%')
+                    ->orderBy('id', 'asc') // Cambia latest('id') a orderBy('id', 'desc')
+                    ->paginate(15);
+
         $data = [
-            'users'=>$users,
-            'busqueda'=>$busqueda,
+            'users' => $users,
+            'busqueda' => $busqueda,
         ];
 
         $user = User::count();
@@ -44,7 +47,7 @@ class UserController extends Controller
 
         return view('users.index', compact('users'), [
             'role' => $role,
-            'user' => $user
+            'user' => $user,
         ], $data)
         ->with('i', (request()->input('page', 1) - 1) * $users->perPage());
     }
@@ -55,6 +58,20 @@ class UserController extends Controller
 
         $pdf = PDF::loadView('users.pdf',['users'=>$users]);
         return $pdf->setPaper('a4', 'landscape')->stream('user.pdf');
+    }
+
+    public function downloadPdf()
+    {
+        $users = User::paginate(200);
+        $pdf = PDF::loadView('users.pdf', ['users' => $users]);
+        
+        // Descargar automáticamente el PDF
+        return $pdf->setPaper('a4', 'landscape')->download('users.pdf');
+    }
+
+    public function export()
+    {
+        return Excel::download(new UsersExport, 'users.xlsx');
     }
 
     public function create()
@@ -69,15 +86,30 @@ class UserController extends Controller
             'name' => 'required',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|same:confirm-password',
-            'roles' => 'required'
+            'roles' => 'required',
+            'genero' => 'required|in:masculino,femenino', // Validación para el campo 'genero'
         ]);
+
         $input = $request->all();
         $input['password'] = Hash::make($input['password']);
+
+        // Determina el avatar predeterminado según el género
+        $avatar = ($input['genero'] === 'masculino') ? 'avatar_masculino.jpg' : 'avatar_femenino.jpg';
+
+        // Si se proporciona un archivo de avatar, guárdalo y actualiza el campo 'avatar'
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $input['avatar'] = $avatarPath;
+        } else {
+            // Si no se proporciona un archivo, usa el avatar predeterminado
+            $input['avatar'] = $avatar;
+        }
+
         $user = User::create($input);
         $user->assignRole($request->input('roles'));
 
         return redirect()->route('users.index')
-        ->with('success', 'Usuario creado con éxito.');
+            ->with('success', 'Usuario creado con éxito.');
     }
 
     public function show($id)
@@ -117,14 +149,13 @@ class UserController extends Controller
         $user->assignRole($request->input('roles'));
 
         return redirect()->route('users.index')
-        ->with('success', 'Usuario modificado con éxito');
+        ->with('success', 'Usuario actualizado con éxito');
     }
 
     public function destroy($id)
     {
         User::find($id)->delete();
-        return redirect()->route('users.index')
-            ->with('success', 'Usuario eliminado con éxito');
+        return redirect()->route('users.index');
     }
 
 }

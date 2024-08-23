@@ -75,7 +75,7 @@
                                     <div class="text">Departamento de Tecnologias de la Informacion</div>
                                     <div class="links-box clearfix">
                                         <div class="link"><a href="#" class="theme-btn btn-style-three"><span
-                                            class="txt">Whitepaper</span></a>
+                                            class="txt">Descargar</span></a>
                                         </div>
                                     </div>
                                 </div>
@@ -87,7 +87,7 @@
                                         <h5>Proximos cursos disponibles en</h5>
                                         <div class="time-counter">
                                             <!-- Time Countdown -->
-                                            <div class="time-countdown-two clearfix" data-countdown="2023/10/31">
+                                            <div class="time-countdown-two clearfix" data-countdown="2023/10/27">
                                             </div>
                                         </div>
                                         <div class="progress-box">
@@ -409,13 +409,8 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </section>
-
-
-
-
 
         <!--Contact Section-->
         <section class="contact-two" id="contact-section">
@@ -698,8 +693,9 @@
     <!--End pagewrapper-->
 
     <!--Scroll to top-->
-    <div class="scroll-to-top scroll-to-target" data-target="html"><span class="icon"><img
-                src="images/icons/arrow-up.svg" alt="" title="Go To Top"></span></div>
+    <div class="scroll-to-top scroll-to-target" data-target="html">
+        <span class="icon"><img src="dist/images/icons/arrow-up.svg" alt="" title="Go To Top"></span>
+    </div>
 
     <script src="dist/js/popper.min.js"></script>
     <script src="dist/js/bootstrap.min.js"></script>
